@@ -30,9 +30,11 @@ const loginHandler = async (req, res) => {
     try {
         const { userName, password } = req.body;
         const user = await User.findOne({ userName })
+
         if (!user) {
             throw new Error("User doesn't exist !")
         }
+
 
         const verifyPassword = await bcrypt.compare(password, user.password)
         if (!verifyPassword) {
@@ -66,16 +68,19 @@ const getAllUsers = async (req, res) => {
     try {
         const users = await User.find({})
         const currentUser = await User.findById(userID)
+
         const checkFollowing = users.map(user => {
-            if (user.followers.id(userID)) {
+            if (user.followers.includes(userID)) {
                 return { name: user.userName, _id: user._id, bio: user.bio, following: true }
             }
             return { name: user.userName, _id: user._id, bio: user.bio, following: false }
         })
+
         const filterOutCurrentUser = checkFollowing.filter(user => user._id.toString() !== userID)
         res.json({ users: filterOutCurrentUser })
 
     } catch (err) {
+        console.log(err.message)
         res.status(400).json({ Error: err.Message })
     }
 }
@@ -85,7 +90,7 @@ const followUser = async (req, res) => {
     const { userID: currentUser } = req
     try {
         const user = await User.findById(userToFollow)
-        if (user.followers.id(currentUser)) {
+        if (user.followers.includes(currentUser)) {
             user.followers.remove({ _id: currentUser })
         } else {
             user.followers.push({ _id: currentUser })
