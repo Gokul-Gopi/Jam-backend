@@ -65,8 +65,16 @@ const getAllUsers = async (req, res) => {
     const { userID } = req
     try {
         const users = await User.find({})
-        const filterOutCurrentUser = users.filter(user => user._id.toString() !== userID)
+        const currentUser = await User.findById(userID)
+        const checkFollowing = users.map(user => {
+            if (user.followers.id(userID)) {
+                return { name: user.userName, _id: user._id, bio: user.bio, following: true }
+            }
+            return { name: user.userName, _id: user._id, bio: user.bio, following: false }
+        })
+        const filterOutCurrentUser = checkFollowing.filter(user => user._id.toString() !== userID)
         res.json({ users: filterOutCurrentUser })
+
     } catch (err) {
         res.status(400).json({ Error: err.Message })
     }
@@ -75,12 +83,15 @@ const getAllUsers = async (req, res) => {
 const followUser = async (req, res) => {
     const { userToFollow } = req.body
     const { userID: currentUser } = req
-
     try {
-        const user = await User.findById({ userToFollow })
-        user.followers.push({ _id: currentUser })
+        const user = await User.findById(userToFollow)
+        if (user.followers.id(currentUser)) {
+            user.followers.remove({ _id: currentUser })
+        } else {
+            user.followers.push({ _id: currentUser })
+        }
         await user.save()
-        res.json({ followedUserID: userToFollow })
+        res.json({ updatedFollowers: userToFollow })
     } catch (err) {
         console.log(err.message)
         res.status(400).json({ Error: err.Message })
