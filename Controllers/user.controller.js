@@ -19,7 +19,7 @@ const signUpHandler = async (req, res) => {
         await user.save()
 
         const token = jwt.sign({ userID: user._id }, process.env.Key)
-        res.status(201).json({ name: userDetails.userName, token, success: true })
+        res.status(201).json({ name: userDetails.userName, id: user._id, token, success: true })
 
     } catch (err) {
         res.status(401).json({ message: err.message })
@@ -35,15 +35,15 @@ const loginHandler = async (req, res) => {
             throw new Error("User doesn't exist !")
         }
 
-
-        const verifyPassword = await bcrypt.compare(password, user.password)
+        const verifyPassword = password === user.password
         if (!verifyPassword) {
             throw new Error('Invalid e-Mail or password!')
         }
         const token = jwt.sign({ userID: user._id }, process.env.Key)
-        res.json({ name: userName, token, success: true })
+        res.json({ name: userName, id: user._id, token, success: true })
 
     } catch (err) {
+        console.log(err.message)
         return res.status(401).json({ message: err.message })
     }
 }

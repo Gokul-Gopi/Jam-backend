@@ -7,12 +7,15 @@ const createPost = async (req, res) => {
     const { postInput } = req.body;
 
     try {
+        const user = await User.findById(userID)
         const post = new Post({
             text: postInput,
             user: userID
         })
 
         await post.save()
+        user.posts.push(post._id)
+        await user.save()
         res.status(201).json({ post });
     } catch (err) {
         console.log(err);
@@ -38,8 +41,8 @@ const likePost = async (req, res) => {
 
     try {
         const post = await Post.findById(postID)
-        if (!post.likes.id(userID)) {
-            post.likes = [...post.likes, { _id: userID }]
+        if (!post.likes.includes(userID)) {
+            post.likes.push(userID)
 
             const newNortification = { text: `${user.userName} liked your tweet` }
             nortification.allNortifications.push(newNortification)
@@ -49,7 +52,7 @@ const likePost = async (req, res) => {
             post.likes.remove(userID)
         }
         await post.save()
-        res.json({ post })
+        res.json({ postID, postOfUser: user._id })
     } catch (err) {
         console.log(err.message)
         res.status(400).json(`Error: ${err.message}`)
