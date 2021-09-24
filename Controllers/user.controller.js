@@ -87,15 +87,20 @@ const getAllUsers = async (req, res) => {
 
 const followUser = async (req, res) => {
     const { userToFollow } = req.body
-    const { userID: currentUser } = req
+    const { userID } = req
     try {
-        const user = await User.findById(userToFollow)
-        if (user.followers.includes(currentUser)) {
-            user.followers.remove({ _id: currentUser })
+        const followUser = await User.findById(userToFollow)
+        const currentUser = await User.findById(userID)
+
+        if (followUser.followers.includes(userID)) {
+            followUser.followers.remove({ _id: userID })
+            currentUser.following.remove({ _id: userToFollow })
         } else {
-            user.followers.push({ _id: currentUser })
+            followUser.followers.push({ _id: userID })
+            currentUser.following.push({ _id: userToFollow })
         }
-        await user.save()
+        await followUser.save()
+        await currentUser.save()
         res.json({ updatedFollowers: userToFollow })
     } catch (err) {
         console.log(err.message)
@@ -108,7 +113,8 @@ const getUserDetails = async (req, res) => {
 
     try {
         const user = await User.findById(userID)
-        res.json({ userDetails: user })
+        await user.populate({ path: 'posts' }).execPopulate()
+        res.json({ userData: { name: user.userName, bio: user.bio }, userPosts: user.posts })
     } catch (err) {
         console.log(err.message)
         res.status(400).json({ Error: err.Message })

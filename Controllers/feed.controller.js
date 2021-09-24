@@ -6,9 +6,12 @@ const getFeed = async (req, res) => {
     const { userID } = req;
     try {
         const user = await User.findById(userID)
-        const { followers } = await user.populate({ path: 'followers', populate: { path: 'posts' } }).execPopulate()
-        const response = followers.map(({ userName, _id, posts }) => ({ userName, _id, posts }))
-        res.json({ posts: response })
+        const { following } = await user.populate({ path: 'following', populate: { path: 'posts' } }).execPopulate()
+        let allposts = []
+        following.map(user => {
+            return user.posts.map(post => allposts.push({ name: user.userName, id: post._id, input: post.text, likes: post.likes, comments: post.comments }))
+        })
+        res.json({ posts: allposts })
 
     } catch (error) {
         console.log(error)
